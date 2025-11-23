@@ -1,150 +1,328 @@
-# Ananta: Scientific LLM Fine-tuning Pipeline
+# Ananta — A Scientific Reasoning LLM
 
-Ananta is a specialized scientific reasoning language model based on DeepSeek-Math-7B, fine-tuned for symbolic mathematics and scientific problem-solving. This repository contains the complete pipeline for data processing, fine-tuning, and deployment. Through this initiative we are trying to implement a new LLM architecture, heavily inspired from the Moosbeaur-Poole Algorithm which in short says that, multiply matrixes smarter.
+<div align="center">
 
-## 🔬 Project Overview
+**An experimental research-driven LLM system focused on scientific reasoning, symbolic mathematics, and formal logic**
 
-Ananta focuses on:
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/status-research-orange.svg)](https://github.com/Prigoistic/ananta-oss)
 
-- **Symbolic reasoning** and mathematical problem-solving
-- **Block-level output generation** optimized for scientific contexts
-- **Parameter-efficient fine-tuning** using LoRA on consumer GPUs
-- **Clean academic codebase** with comprehensive documentation
+</div>
+
+---
+
+## 🎯 Project Vision
+
+Ananta aims to construct the **first open-source, verifiable, self-learning scientific LLM**, capable of:
+
+- ✅ Solving PhD-level mathematics and physics problems
+- ✅ Generating fully correct, stepwise derivations
+- ✅ Discovering new lemmas and mathematical relations
+- ✅ Autoformalizing scientific papers into formal logic
+- ✅ Creating new scientific hypotheses grounded in symbolic verification
+
+**Core Philosophy:** Go beyond typical transformer-based language models by constructing a hybrid architecture that understands symbolic math deeply, produces correct reasoning steps, verifies its own reasoning using logic, reduces hallucination, learns recursively, and evolves toward self-improving AI.
+
+---
+
+## 🏗️ System Architecture
+
+Ananta consists of three major subsystems working in harmony:
+
+### 1. **HMTT — Hybrid Math-Text Tokenizer**
+
+A specialized tokenizer that fixes fundamental limitations in BPE, SentencePiece, and GPT tokenizers for mathematical content.
+
+**Key Features:**
+- Separates digits, operators, math symbols, variables, and LaTeX expressions
+- Provides better chain-of-thought stability
+- Improves arithmetic reasoning accuracy
+- Reduces token fragmentation
+- Increases symbolic precision
+
+**Status:** ✅ Complete implementation (see `HMTT/` branch)
+
+### 2. **RLS — Recursive Logic Subsystem**
+
+The symbolic "brainstem" of Ananta — a verification engine that ensures logical correctness.
+
+**Components:**
+
+#### Symbolic Verifier
+- Syntax checking
+- Axiom/theorem matching
+- Semantic entailment (SMT/ATP solver integration)
+- Stepwise validity verification
+
+#### Autoformalization Engine
+- Converts natural language scientific text into formal logic
+- Validates formalized output
+- Adds verified statements to symbolic memory
+
+#### Lemma Discovery System
+- Detects frequently used proof fragments
+- Generalizes them into reusable lemmas
+- Dynamically expands the knowledge base
+
+#### Symbolic Memory (Knowledge Base)
+- Grows recursively with validated proofs
+- Stores axioms, theorems, and discovered lemmas
+- Increases reasoning efficiency over time
+
+**Status:** 🚧 In development
+
+### 3. **EB-SLE — Energy-Based Self-Learning Engine**
+
+A fundamentally new reasoning paradigm that replaces next-token prediction with energy-based optimization.
+
+**Innovation:**
+Instead of:
+```
+Predict next token → maximize likelihood
+```
+
+EB-SLE uses:
+```
+Assign energy to reasoning traces → minimize symbolic inconsistency
+```
+
+**Key Elements:**
+- Energy functional with symbolic penalty terms
+- Global coherence constraints
+- Contrastive divergence sampling
+- Verifier-guided gradients
+- Recursive self-learning loop
+
+**Status:** 🚧 Research phase
+
+---
+
+## 📊 Technical Specifications
+
+### Model Foundation
+- **Base Model:** `deepseek-ai/deepseek-math-7b`
+- **Fine-Tuning:** LoRA (Low-Rank Adaptation)
+- **Infrastructure:** Dual H100 GPUs (upgraded from RTX 3050)
+
+### Training Datasets
+- DeepMind Mathematics Dataset
+- GSM8K (Grade School Math)
+- MATH (Hendrycks et al.)
+- Custom symbolic derivation datasets
+- Physics equation derivation sets (in progress)
+
+### Output Format
+- Block-level reasoning chains
+- Structured step-by-step derivations
+- Formal verification annotations
+
+### Evaluation Metrics
+- **SV:** Symbolic Validity
+- **DC:** Derivation Completeness
+- **AFA:** Autoformalization Accuracy
+- **EG:** Energy Gap
+- **STR:** Symbolic Truthfulness Rate
+
+---
+
+## 🔄 Complete Pipeline
+
+```mermaid
+graph TD
+    A[Raw Scientific Text] --> B[HMTT Tokenization]
+    B --> C[Base LLM Processing]
+    C --> D[Reasoning Generation]
+    D --> E[RLS Verification]
+    E --> F{Valid?}
+    F -->|Yes| G[Accept & Store]
+    F -->|No| H[EB-SLE Energy Update]
+    H --> D
+    G --> I[Symbolic Memory Update]
+    I --> J[Lemma Discovery]
+```
+
+### 1. Data Pipeline
+```bash
+# Extract and process mathematical datasets
+python src/data/data_processor.py --dataset deepmind_math
+python src/data/flexible_data_processor.py --format blocks
+```
+
+### 2. Training Pipeline
+```bash
+# Fine-tune with LoRA
+python src/training/easy_train.py --config configs/train_config.json
+```
+
+### 3. Reasoning Pipeline
+```
+Input Text → HMTT → Model Generation → RLS Verification → EB-SLE Update
+```
+
+### 4. Evaluation
+```bash
+# Run evaluation suite
+python src/evaluation/evaluate_model.py --benchmark math
+```
+
+---
 
 ## 🚀 Quick Start
-
-### Prerequisites
-
-- Python 3.9+
-- CUDA-compatible GPU (RTX 3050 or better)
-- 16GB+ RAM recommended
-- DeepMind mathematics_dataset-v1.0 in txt format
 
 ### Installation
 
 ```bash
-git clone https://github.com/yourusername/ananta-update.git
-cd ananta-update
+# Clone the repository
+git clone https://github.com/Prigoistic/ananta-oss.git
+cd ananta-oss
+
+# Install dependencies
 pip install -r requirements.txt
+
+# Optional: Install HMTT
+git checkout HMTT
+cd HMTT && pip install -e .
 ```
 
-### Usage Pipeline
+### Basic Usage
 
-1. **Data Processing**: Convert raw dataset to training format
+```python
+from src.training.easy_train import train_model
 
-   ```bash
-   python src/data/data_processor.py
-   # or for simpler conversion
-   python src/data/simple_data_converter.py
-   ```
+# Train the model
+train_model(
+    base_model="deepseek-ai/deepseek-math-7b",
+    dataset="deepmind_math",
+    output_dir="./models/ananta-v1"
+)
+```
 
-2. **Fine-tuning**: Train the model with LoRA
+### Using HMTT Tokenizer
 
-   ```bash
-   python src/training/train_ananta.py
-   # or for easier training
-   python src/training/easy_train.py
-   ```
+```python
+from HMTT import HMTTEncoder, HMTTDecoder
 
-3. **Evaluation**: Test model performance
+# Initialize
+encoder = HMTTEncoder("path/to/tokenizer.json")
+decoder = HMTTDecoder("path/to/tokenizer.json")
 
-   ```bash
-   python src/evaluation/evaluate_model.py
-   ```
+# Encode mathematical text
+text = "The equation $E = mc^2$ represents mass-energy equivalence"
+token_ids = encoder.encode(text)
 
-4. **Demo Interface**: Launch Gradio interface
-   ```bash
-   python demos/app.py
-   ```
+# Decode
+reconstructed = decoder.decode(token_ids)
+```
 
-5. **Complete Pipeline**: Run the entire workflow
-   ```bash
-   python src/run_pipeline.py
-   ```
+---
 
-## 📊 Model Specifications
-
-- **Base Model**: deepseek-ai/deepseek-math-7b
-- **Fine-tuning Method**: LoRA (Low-Rank Adaptation)
-- **Target Modules**: q_proj, v_proj
-- **Training Configuration**:
-  - Batch size: 1 (with gradient accumulation: 16)
-  - Learning rate: 5e-5
-  - Epochs: 3
-  - Precision: FP16
-
-## 🔧 Deployment Options
-
-### Local Deployment
-
-- Use `app.py` for local Gradio interface
-- Load model in LM Studio for interactive testing
-
-### Cloud Deployment
-
-- **Hugging Face Spaces**: Upload to HF Spaces with Gradio
-- **FastAPI**: Production API using `deploy/api_server.py`
-- **Docker**: Containerized deployment (see `Dockerfile`)
-
-## 📁 Project Structure
+## 📁 Repository Structure
 
 ```
-ananta-update/
-├── src/                          # Source code
-│   ├── training/                 # Training scripts
-│   │   ├── train_ananta.py      # Main training script with LoRA
-│   │   └── easy_train.py        # Simplified training script
-│   ├── data/                     # Data processing
-│   │   ├── data_processor.py    # Main dataset processor
-│   │   ├── flexible_data_processor.py  # Flexible format handler
-│   │   ├── simple_data_converter.py    # Simple converter
-│   │   └── check_dataset.py     # Dataset structure diagnostic
-│   ├── evaluation/               # Model evaluation
-│   │   └── evaluate_model.py    # Evaluation metrics and benchmarks
-│   ├── utils/                    # Utility functions
-│   └── run_pipeline.py          # Complete pipeline orchestration
-│
-├── deployment/                   # Deployment configurations
-│   ├── huggingface/             # HuggingFace Spaces deployment
-│   │   └── deploy_hf_spaces.py # HF Spaces setup script
-│   └── api/                     # API deployment (future)
-│
-├── demos/                        # Demo applications
-│   └── app.py                   # Gradio demo interface
-│
-├── tests/                        # Testing scripts
-│   └── test_ananta.py           # Model testing utilities
-│
-├── configs/                      # Configuration files
-│   ├── train_config.json        # Training configuration
-│   └── simple_requirements.txt  # Minimal requirements
-│
-├── docs/                         # Documentation
-│   └── SIMPLE_README.md         # Simplified documentation
-│
-├── EBSL-Engine/                  # Engine components (future)
-├── HMTT/                         # HMTT components (future)
-├── RSL/                          # RSL components (future)
-│
-├── requirements.txt              # Main dependencies
-└── README.md                     # This file
+ananta/
+├── HMTT/                          # Hybrid Math-Text Tokenizer (branch)
+│   ├── preprocessing/             # Text partitioning & tokenization
+│   ├── training/                  # BPE vocabulary training
+│   ├── inference/                 # Encoding & decoding
+│   ├── evaluation/                # TFS metrics
+│   └── examples/                  # Usage examples
+├── RLS/                           # Recursive Logic Subsystem (planned)
+├── EBSL-Engine/                   # Energy-Based Self-Learning (planned)
+├── src/
+│   ├── training/                  # Model training scripts
+│   ├── data/                      # Data processing utilities
+│   ├── evaluation/                # Evaluation metrics
+│   └── utils/                     # Helper functions
+├── configs/                       # Configuration files
+├── demos/                         # Demo applications
+├── deployment/                    # Deployment scripts
+│   └── huggingface/              # HF Spaces deployment
+├── docs/                          # Documentation
+│   ├── QUICK_START.md
+│   ├── CONTRIBUTING.md
+│   └── SIMPLE_README.md
+└── tests/                         # Test suite
 ```
+
+---
+
+## 🆚 Comparison with Existing Models
+
+| Model | Weakness | Ananta Solution |
+|-------|----------|-----------------|
+| GPT/Llama/Gemini | Predict tokens, not logic | Energy + symbolic correctness |
+| Diffusion LLMs | No symbolic grounding | Verifier-constrained gradients |
+| GAN-style models | Adversarial instability | Cooperative verifier loop |
+| DeepSeek-R1 | No formal verification | RLS step-by-step validation |
+| o3/DeepMind | Strong but black-box | Transparent & self-formalizing |
+
+---
+
+## 🛣️ Roadmap (Ananta V2)
+
+- [ ] Replace LoRA with RLHF + PPO
+- [ ] Full EB-SLE engine integration
+- [ ] Multi-agent scientific reasoning (research agents)
+- [ ] Continuous-time reasoning models
+- [ ] Differentiable theorem solvers
+- [ ] Scientific hypothesis generation engine
+- [ ] Breaking compute frontier optimization (Moosbauer-Poole inspired)
+
+---
+
+## 📚 Research Foundations
+
+This project builds upon research in:
+- Symbolic AI and automated theorem proving
+- Energy-based models (LeCun et al.)
+- Chain-of-thought reasoning (Wei et al.)
+- Mathematical language models (Lewkowycz et al.)
+- Formal verification systems (Lean, Coq, Isabelle)
+
+---
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/improvement`)
-3. Commit changes (`git commit -am 'Add feature'`)
-4. Push to branch (`git push origin feature/improvement`)
-5. Create Pull Request
+We welcome contributions! This is an active research project.
 
-## 📚 References
-- [Hybrid Math Text Tonkenizer](https://www.researchgate.net/publication/393773297_Bridging_the_Semantic_Gap_A_Hybrid_Math-Text_Tokenizer_for_Enhanced_Logical_Reasoning_in_Large_Language_Models)
-- [A Critical Analysis of the Proposed Recursive Logic Subsystem for Self-Learning LLMs in Scientific Discovery](https://www.researchgate.net/publication/395473790_A_Critical_Analysis_of_the_Proposed_Recursive_Logic_Subsystem_for_Self-Learning_LLMs_in_Scientific_Discovery)
-- [DeepSeek-Math Paper](https://arxiv.org/abs/2402.03300)
-- [LoRA: Low-Rank Adaptation](https://arxiv.org/abs/2106.09685)
-- [Mathematics Dataset](https://github.com/deepmind/mathematics_dataset)
+Please see [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
+
+### Areas for Contribution
+- Dataset curation and preprocessing
+- Symbolic verification algorithms
+- Energy functional design
+- Benchmark development
+- Documentation improvements
+
+---
 
 ## 📄 License
 
-MIT License - see LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 📬 Contact
+
+**Project Lead:** Priyam Ghosh  
+**Repository:** [github.com/Prigoistic/ananta-oss](https://github.com/Prigoistic/ananta-oss)
+
+---
+
+## 🙏 Acknowledgments
+
+- DeepSeek AI for the base mathematical reasoning model
+- The open-source AI research community
+- Contributors to symbolic mathematics libraries
+- Automated theorem proving research community
+
+---
+
+<div align="center">
+
+**Built with the goal of advancing scientific reasoning through symbolic AI**
+
+⭐ Star this repo if you believe in verifiable, transparent AI reasoning!
+
+</div>
