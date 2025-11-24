@@ -4,7 +4,7 @@ Hybrid Math-Text Tokenizer (HMTT)
 A discrete tokenization system that combines natural language, mathematical LaTeX,
 and code tokenization with BPE vocabulary learning.
 
-This is a purely symbolic tokenizer - NOT an encoder, VAE, or latent model.
+this is a purely symbolic tokenizer - NOT an encoder, VAE, or latent model.
 """
 
 __version__ = "1.0.0"

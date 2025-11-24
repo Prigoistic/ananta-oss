@@ -3,10 +3,12 @@ Math Tokenizer for HMTT.
 
 Structure-aware LaTeX tokenizer that extracts atomic mathematical units
 without rendering or encoding - purely symbolic splitting.
+Uses dynamic analysis to identify patterns without hardcoding.
 """
 
 import re
-from typing import List, Set
+from typing import List, Set, Optional
+from .dynamic_analyzer import DynamicMathAnalyzer
 
 
 class MathTokenizer:
@@ -27,65 +29,59 @@ class MathTokenizer:
     - Numbers
     """
     
-    # Common LaTeX commands (extendable)
-    LATEX_COMMANDS = {
-        # Greek letters
-        'alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta',
-        'iota', 'kappa', 'lambda', 'mu', 'nu', 'xi', 'pi', 'rho', 'sigma',
-        'tau', 'upsilon', 'phi', 'chi', 'psi', 'omega',
-        'Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta', 'Eta', 'Theta',
-        'Iota', 'Kappa', 'Lambda', 'Mu', 'Nu', 'Xi', 'Pi', 'Rho', 'Sigma',
-        'Tau', 'Upsilon', 'Phi', 'Chi', 'Psi', 'Omega',
+    def __init__(self, corpus_samples: Optional[List[str]] = None, min_frequency: int = 1):
+        """
+        Initialize the math tokenizer with dynamic learning.
         
-        # Math operators
-        'frac', 'sqrt', 'sum', 'prod', 'int', 'lim', 'inf', 'sup',
-        'sin', 'cos', 'tan', 'cot', 'sec', 'csc',
-        'arcsin', 'arccos', 'arctan',
-        'sinh', 'cosh', 'tanh',
-        'log', 'ln', 'exp',
-        'min', 'max', 'arg', 'det', 'dim', 'ker',
+        Args:
+            corpus_samples: Optional corpus to learn patterns from
+            min_frequency: Minimum frequency for pattern recognition
+        """
+        # Use dynamic analyzer
+        self.analyzer = DynamicMathAnalyzer()
         
-        # Arrows and relations
-        'rightarrow', 'leftarrow', 'Rightarrow', 'Leftarrow', 'leftrightarrow',
-        'to', 'mapsto', 'implies', 'iff',
-        'leq', 'geq', 'neq', 'approx', 'equiv', 'sim', 'propto',
-        'subset', 'subseteq', 'supset', 'supseteq',
-        'in', 'notin', 'cup', 'cap', 'emptyset',
+        if corpus_samples:
+            # Learn from provided corpus
+            patterns = self.analyzer.analyze_corpus(corpus_samples, min_frequency)
+            self.LATEX_COMMANDS = patterns['commands']
+        else:
+            # Start with empty set - will learn on-the-fly
+            self.LATEX_COMMANDS = set()
         
-        # Delimiters
-        'left', 'right', 'big', 'Big', 'bigg', 'Bigg',
-        
-        # Formatting
-        'mathbb', 'mathbf', 'mathcal', 'mathit', 'mathrm', 'mathsf',
-        'text', 'textbf', 'textit',
-        'over', 'choose',
-        
-        # Spacing
-        'quad', 'qquad', 'space', 'hspace', 'vspace',
-        
-        # Special
-        'partial', 'nabla', 'infty', 'cdot', 'cdots', 'ldots', 'ddots',
-        'times', 'div', 'pm', 'mp',
-    }
+        # Dynamic command pattern (rebuilt as we learn)
+        self._rebuild_command_pattern()
     
-    def __init__(self):
-        """Initialize the math tokenizer."""
-        # Build command pattern
-        command_list = '|'.join(sorted(self.LATEX_COMMANDS, key=len, reverse=True))
-        self.command_pattern = re.compile(
-            r'\\(?:' + command_list + r')\b'
-        )
+    def _rebuild_command_pattern(self):
+        """Rebuild regex pattern from learned commands."""
+        if self.LATEX_COMMANDS:
+            command_list = '|'.join(sorted(self.LATEX_COMMANDS, key=len, reverse=True))
+            self.command_pattern = re.compile(r'\\(?:' + command_list + r')\b')
+        else:
+            # Generic pattern to match any LaTeX command
+            self.command_pattern = re.compile(r'\\[a-zA-Z]+\b')
     
-    def tokenize(self, math_text: str) -> List[str]:
+    def learn_from_text(self, math_text: str):
+        """Learn new LaTeX commands from text on-the-fly."""
+        new_commands = self.analyzer.latex_command_pattern.findall(math_text)
+        if new_commands:
+            self.LATEX_COMMANDS.update(new_commands)
+            self._rebuild_command_pattern()
+    
+    def tokenize(self, math_text: str, learn: bool = True) -> List[str]:
         """
         Tokenize mathematical LaTeX expression into atomic units.
         
         Args:
             math_text: LaTeX mathematical expression
+            learn: Whether to learn new patterns from this text
             
         Returns:
             List of atomic token strings
         """
+        # Optionally learn from this text
+        if learn:
+            self.learn_from_text(math_text)
+        
         tokens = []
         i = 0
         
@@ -103,13 +99,24 @@ class MathTokenizer:
                     i = cmd_match.end()
                     continue
                 else:
-                    # Single character escape like \{, \}, etc.
-                    if i + 1 < len(math_text):
-                        tokens.append(math_text[i:i+2])
-                        i += 2
+                    # Unknown command - extract it
+                    cmd_match = re.match(r'\\([a-zA-Z]+)', math_text[i:])
+                    if cmd_match:
+                        token = cmd_match.group(0)
+                        tokens.append(token)
+                        # Learn this new command
+                        if learn:
+                            self.LATEX_COMMANDS.add(cmd_match.group(1))
+                            self._rebuild_command_pattern()
+                        i += len(token)
                     else:
-                        tokens.append(math_text[i])
-                        i += 1
+                        # Single character escape like \{, \}, etc.
+                        if i + 1 < len(math_text):
+                            tokens.append(math_text[i:i+2])
+                            i += 2
+                        else:
+                            tokens.append(math_text[i])
+                            i += 1
                     continue
             
             # Numbers (including decimals and scientific notation)

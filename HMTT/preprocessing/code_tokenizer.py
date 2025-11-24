@@ -1,21 +1,22 @@
 """
 Code Tokenizer for HMTT.
 
-AST-based code tokenizer using tree-sitter for structural code tokenization.
-Falls back to simple regex-based tokenization if tree-sitter is unavailable.
+Dynamic code tokenizer that learns patterns from corpus without hardcoding.
+Uses AST-based analysis and statistical pattern recognition.
 """
 
 import re
 from typing import List, Optional
+from .dynamic_analyzer import DynamicCodeAnalyzer
 
 
 class CodeTokenizer:
     """
-    AST-based code tokenizer using tree-sitter.
+    Dynamic code tokenizer that learns from corpus.
     
     Extracts atomic units:
     - Identifiers
-    - Keywords
+    - Keywords (learned)
     - Operators
     - Literals (strings, numbers)
     - Punctuation
@@ -23,38 +24,31 @@ class CodeTokenizer:
     Falls back to regex-based tokenization if tree-sitter is not available.
     """
     
-    KEYWORDS = {
-        # Python keywords
-        'False', 'None', 'True', 'and', 'as', 'assert', 'async', 'await',
-        'break', 'class', 'continue', 'def', 'del', 'elif', 'else', 'except',
-        'finally', 'for', 'from', 'global', 'if', 'import', 'in', 'is',
-        'lambda', 'nonlocal', 'not', 'or', 'pass', 'raise', 'return',
-        'try', 'while', 'with', 'yield',
-        
-        # JavaScript/TypeScript keywords
-        'abstract', 'arguments', 'boolean', 'break', 'byte', 'case', 'catch',
-        'char', 'const', 'debugger', 'default', 'delete', 'do', 'double',
-        'enum', 'eval', 'export', 'extends', 'false', 'final', 'float',
-        'function', 'goto', 'implements', 'instanceof', 'int', 'interface',
-        'let', 'long', 'native', 'new', 'null', 'package', 'private',
-        'protected', 'public', 'short', 'static', 'super', 'switch',
-        'synchronized', 'this', 'throw', 'throws', 'transient', 'typeof',
-        'var', 'void', 'volatile',
-        
-        # C/C++ keywords
-        'auto', 'extern', 'register', 'signed', 'sizeof', 'struct',
-        'typedef', 'union', 'unsigned',
-    }
-    
-    def __init__(self, language: str = "python"):
+    def __init__(self, language: str = "python", corpus_samples: Optional[List[str]] = None):
         """
-        Initialize the code tokenizer.
+        Initialize the code tokenizer with dynamic learning.
         
         Args:
-            language: Programming language ("python", "javascript", "c", etc.)
+            language: Programming language hint ("python", "javascript", "c", etc.)
+            corpus_samples: Optional corpus to learn patterns from
         """
         self.language = language
         self.tree_sitter_available = False
+        
+        # Use dynamic analyzer
+        self.analyzer = DynamicCodeAnalyzer()
+        
+        if corpus_samples:
+            # Learn from provided corpus
+            patterns = self.analyzer.analyze_corpus(corpus_samples, language)
+            self.KEYWORDS = patterns['keywords']
+            self.BUILTINS = patterns['builtins']
+            self.CONTROL_FLOW = patterns['control_flow']
+        else:
+            # Start with empty sets - will learn on-the-fly
+            self.KEYWORDS = set()
+            self.BUILTINS = set()
+            self.CONTROL_FLOW = set()
         
         # Try to import tree-sitter
         try:
@@ -80,41 +74,44 @@ class CodeTokenizer:
         except Exception:
             self.tree_sitter_available = False
     
-    def tokenize(self, code_text: str) -> List[str]:
+    def tokenize(self, code_text: str, learn: bool = True) -> List[str]:
         """
         Tokenize code into atomic units.
         
         Args:
             code_text: Source code text
+            learn: Whether to learn new patterns from this text
             
         Returns:
             List of atomic token strings
         """
         if self.tree_sitter_available:
-            return self._tokenize_with_tree_sitter(code_text)
+            return self._tokenize_with_tree_sitter(code_text, learn)
         else:
-            return self._tokenize_with_regex(code_text)
+            return self._tokenize_with_regex(code_text, learn)
     
-    def _tokenize_with_tree_sitter(self, code_text: str) -> List[str]:
+    def _tokenize_with_tree_sitter(self, code_text: str, learn: bool = True) -> List[str]:
         """
         Tokenize using tree-sitter AST.
         
         Args:
             code_text: Source code text
+            learn: Whether to learn patterns
             
         Returns:
             List of tokens
         """
         # This would use tree-sitter to parse and extract tokens
         # For now, fall back to regex
-        return self._tokenize_with_regex(code_text)
+        return self._tokenize_with_regex(code_text, learn)
     
-    def _tokenize_with_regex(self, code_text: str) -> List[str]:
+    def _tokenize_with_regex(self, code_text: str, learn: bool = True) -> List[str]:
         """
         Tokenize using regex patterns (fallback method).
         
         Args:
             code_text: Source code text
+            learn: Whether to learn new patterns
             
         Returns:
             List of tokens
@@ -179,6 +176,9 @@ class CodeTokenizer:
                 if ident_match:
                     token = ident_match.group(0)
                     tokens.append(token)
+                    # Learn if it looks like a keyword
+                    if learn and self.analyzer._looks_like_keyword(token):
+                        self.KEYWORDS.add(token)
                     i += ident_match.end()
                     continue
             
@@ -239,7 +239,7 @@ class CodeTokenizer:
     
     def is_keyword(self, token: str) -> bool:
         """
-        Check if a token is a keyword.
+        Check if a token is a keyword (using learned patterns).
         
         Args:
             token: Token string
@@ -247,7 +247,7 @@ class CodeTokenizer:
         Returns:
             True if token is a keyword
         """
-        return token in self.KEYWORDS
+        return token in self.KEYWORDS or self.analyzer.is_keyword(token)
     
     def is_identifier(self, token: str) -> bool:
         """
@@ -263,7 +263,7 @@ class CodeTokenizer:
     
     def is_literal(self, token: str) -> bool:
         """
-        Check if a token is a literal (string or number).
+        Check if a token is a literal (using dynamic analysis).
         
         Args:
             token: Token string
@@ -271,19 +271,4 @@ class CodeTokenizer:
         Returns:
             True if token is a literal
         """
-        # String literal
-        if (token.startswith('"') and token.endswith('"')) or \
-           (token.startswith("'") and token.endswith("'")):
-            return True
-        
-        # Number literal
-        if re.match(r'^0[xX][0-9a-fA-F]+$', token):  # hex
-            return True
-        if re.match(r'^0[bB][01]+$', token):  # binary
-            return True
-        if re.match(r'^0[oO][0-7]+$', token):  # octal
-            return True
-        if re.match(r'^\d+\.?\d*(?:[eE][+-]?\d+)?$', token):  # decimal
-            return True
-        
-        return False
+        return self.analyzer.is_literal(token)

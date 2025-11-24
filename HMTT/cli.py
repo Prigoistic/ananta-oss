@@ -89,7 +89,6 @@ def cmd_encode(args):
     
     try:
         encoder = HMTTEncoder(args.tokenizer)
-        
         if args.input == '-':
             text = sys.stdin.read()
         else:
