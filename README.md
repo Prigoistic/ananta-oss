@@ -36,12 +36,21 @@ A specialized tokenizer that fixes fundamental limitations in BPE, SentencePiece
 
 **Key Features:**
 - Separates digits, operators, math symbols, variables, and LaTeX expressions
+- **Dynamic learning:** No hardcoded keywords - learns patterns from corpus
+- **Language-agnostic:** Works with any programming language and custom DSLs
+- **Corpus-based training:** Adapts to project-specific patterns
+- **On-the-fly learning:** Discovers new LaTeX commands and keywords automatically
 - Provides better chain-of-thought stability
 - Improves arithmetic reasoning accuracy
 - Reduces token fragmentation
 - Increases symbolic precision
 
-**Status:** ✅ Complete implementation (see `HMTT/` branch)
+**Technical Innovation:**
+- `DynamicMathAnalyzer`: Learns LaTeX commands from corpus using frequency analysis
+- `DynamicCodeAnalyzer`: Identifies keywords via statistical pattern recognition
+- `SemanticTokenClassifier`: Context-based token classification across NL/MATH/CODE
+
+**Status:** ✅ Complete implementation with dynamic learning (see `HMTT/` branch)
 
 ### 2. **RLS — Recursive Logic Subsystem**
 
@@ -200,10 +209,11 @@ train_model(
 
 ### Using HMTT Tokenizer
 
+**Basic Usage (Traditional):**
 ```python
 from HMTT import HMTTEncoder, HMTTDecoder
 
-# Initialize
+# Initialize with trained vocabulary
 encoder = HMTTEncoder("path/to/tokenizer.json")
 decoder = HMTTDecoder("path/to/tokenizer.json")
 
@@ -215,18 +225,60 @@ token_ids = encoder.encode(text)
 reconstructed = decoder.decode(token_ids)
 ```
 
+**Dynamic Learning (New in V2):**
+```python
+from HMTT.preprocessing import MathTokenizer, CodeTokenizer
+
+# Math tokenizer with corpus-based learning
+math_corpus = [
+    r"\frac{x^2}{2} + \alpha",
+    r"\int_0^1 f(x) dx",
+    r"\customcmd{test}"  # Learns custom commands!
+]
+math_tokenizer = MathTokenizer(corpus_samples=math_corpus, min_frequency=2)
+tokens = math_tokenizer.tokenize(r"\customcmd{y} + \frac{1}{2}")
+
+# Code tokenizer (language-agnostic)
+code_corpus = [
+    "def hello(): return 42",
+    "fnc greet(name): show(name)"  # Works with custom DSLs!
+]
+code_tokenizer = CodeTokenizer(corpus_samples=code_corpus)
+tokens = code_tokenizer.tokenize("def factorial(n): return 1 if n == 0 else n")
+
+# On-the-fly learning
+tokenizer = MathTokenizer()
+tokens = tokenizer.tokenize(r"\newcommand{x}", learn=True)  # Learns \newcommand
+```
+
+**Key Advantages:**
+- ✅ No hardcoded keyword lists (200+ keywords → 0)
+- ✅ Learns from YOUR codebase and papers
+- ✅ Works with ANY programming language
+- ✅ Supports custom LaTeX commands
+- ✅ Adaptive to project-specific patterns
+
 ---
 
 ## 📁 Repository Structure
 
 ```
 ananta/
-├── HMTT/                          # Hybrid Math-Text Tokenizer (branch)
-│   ├── preprocessing/             # Text partitioning & tokenization
+├── HMTT/                          # Hybrid Math-Text Tokenizer ✅ (V2: Dynamic Learning)
+│   ├── preprocessing/             # Text partitioning & dynamic tokenization
+│   │   ├── dynamic_analyzer.py    # NEW: Corpus-based pattern learning
+│   │   ├── math_tokenizer.py      # LaTeX tokenizer (learns commands)
+│   │   ├── code_tokenizer.py      # Code tokenizer (language-agnostic)
+│   │   ├── nl_tokenizer.py        # Natural language tokenizer
+│   │   ├── partitioner.py         # NL/MATH/CODE separation
+│   │   └── DYNAMIC_LEARNING.md    # Documentation for dynamic features
 │   ├── training/                  # BPE vocabulary training
 │   ├── inference/                 # Encoding & decoding
 │   ├── evaluation/                # TFS metrics
-│   └── examples/                  # Usage examples
+│   ├── examples/                  # Usage examples
+│   │   └── dynamic_learning_demo.py  # NEW: Demo of dynamic learning
+│   ├── DYNAMIC_TOKENIZATION.md    # NEW: V2 features overview
+│   └── CHANGELOG_DYNAMIC.md       # NEW: Version 2.0 changelog
 ├── RLS/                           # Recursive Logic Subsystem (planned)
 ├── EBSL-Engine/                   # Energy-Based Self-Learning (planned)
 ├── src/
@@ -252,6 +304,8 @@ ananta/
 | Model | Weakness | Ananta Solution |
 |-------|----------|-----------------|
 | GPT/Llama/Gemini | Predict tokens, not logic | Energy + symbolic correctness |
+| GPT/Llama Tokenizers | Hardcoded keywords, breaks math | HMTT: Dynamic learning from corpus |
+| BPE/SentencePiece | Fragments LaTeX, poor for code | HMTT: Atomic math units, language-agnostic |
 | Diffusion LLMs | No symbolic grounding | Verifier-constrained gradients |
 | GAN-style models | Adversarial instability | Cooperative verifier loop |
 | DeepSeek-R1 | No formal verification | RLS step-by-step validation |
@@ -259,10 +313,29 @@ ananta/
 
 ---
 
-## 🛣️ Roadmap (Ananta V2)
+## 🛣️ Roadmap
 
+### ✅ Completed (V1)
+- [x] HMTT base implementation (discrete BPE tokenizer)
+- [x] NL/MATH/CODE partitioning
+- [x] Structure-aware LaTeX tokenization
+- [x] TFS evaluation metric
+- [x] Basic training pipeline
+
+### ✅ Completed (V2 - Dynamic Learning)
+- [x] Eliminated all hardcoded keywords (200+ → 0)
+- [x] Dynamic corpus-based learning
+- [x] Language-agnostic code tokenizer
+- [x] On-the-fly pattern discovery
+- [x] Semantic token classification
+
+### 🚧 In Progress (V3)
+- [ ] RLS implementation (symbolic verification)
+- [ ] EB-SLE engine prototype
 - [ ] Replace LoRA with RLHF + PPO
 - [ ] Full EB-SLE engine integration
+
+### 🔮 Future (Ananta V4+)
 - [ ] Multi-agent scientific reasoning (research agents)
 - [ ] Continuous-time reasoning models
 - [ ] Differentiable theorem solvers
