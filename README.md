@@ -16,7 +16,7 @@
 
 Ananta aims to construct the **first open-source, verifiable, self-learning scientific LLM**, capable of:
 
-- ✅ Solving PhD-level mathematics and physics problems
+- ✅ Solving PhD-level mathematics and physics problems.
 - ✅ Generating fully correct, stepwise derivations
 - ✅ Discovering new lemmas and mathematical relations
 - ✅ Autoformalizing scientific papers into formal logic
