@@ -1,0 +1,12 @@
+# HMTT Requirements
+
+# Core dependencies
+tokenizers>=0.13.0
+
+# Optional dependencies (for enhanced functionality)
+regex>=2023.0.0  # Unicode-aware NL tokenization
+pytest>=7.0.0    # Testing
+
+# Tree-sitter support (optional, for AST-based code tokenization)
+# tree-sitter>=0.20.0
+# tree-sitter-python>=0.20.0
