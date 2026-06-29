@@ -8,7 +8,13 @@ A domain-aware tokenizer and LoRA fine-tuning pipeline for mathematical reasonin
 
 Standard BPE tokenizers—the kind used in GPT-4, LLaMA, and most open-weight models—treat mathematical notation as arbitrary character sequences. This produces systematic fragmentation: `\frac` becomes `[\, fr, ac]`, the subscript `x_{i+1}` is split at the brace boundary, and a LaTeX command your model has never seen gets decomposed into meaningless subword shards. The damage is not cosmetic. When the atomic units of symbolic reasoning—variables, operators, LaTeX commands—are split across token boundaries, the model must learn that `fr` and `ac` together mean "fraction." That is wasted capacity, and it degrades chain-of-thought stability for arithmetic derivations because the structural signal is buried under a tokenization artifact.
 
-The same problem appears in code: standard tokenizers were trained on English text corpora, so they handle Python adequately but perform poorly on any DSL or mathematical pseudocode where the keyword set is not pre-encoded in the vocabulary.
+- ✅ Solving PhD-level mathematics and physics problems.
+- ✅ Generating fully correct, stepwise derivations
+- ✅ Discovering new lemmas and mathematical relations
+- ✅ Autoformalizing scientific papers into formal logic
+- ✅ Creating new scientific hypotheses grounded in symbolic verification
+
+**Core Philosophy:** Go beyond typical transformer-based language models by constructing a hybrid architecture that understands symbolic math deeply, produces correct reasoning steps, verifies its own reasoning using logic, reduces hallucination, learns recursively, and evolves toward self-improving AI.
 
 ---
 
