@@ -1,0 +1,73 @@
+name: Conflict Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  check-mergeable:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check mergeable state and label/comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+            });
+
+            // mergeable is null right after certain events while GitHub
+            // computes it; poll briefly before giving up.
+            let mergeable = pr.mergeable;
+            let attempts = 0;
+            while (mergeable === null && attempts < 5) {
+              await new Promise((r) => setTimeout(r, 3000));
+              const { data: retry } = await github.rest.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.pull_request.number,
+              });
+              mergeable = retry.mergeable;
+              attempts++;
+            }
+
+            const label = "has-conflicts";
+            const { data: labels } = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+            });
+            const hasLabel = labels.some((l) => l.name === label);
+
+            if (mergeable === false) {
+              if (!hasLabel) {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.payload.pull_request.number,
+                  labels: [label],
+                });
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.payload.pull_request.number,
+                  body: "This PR has merge conflicts with its base branch. Please rebase or merge the base branch in and resolve them manually — conflicts are not auto-resolved by CI, since a prior automated resolution on this repo silently discarded real content once already.",
+                });
+              }
+              core.setFailed("PR has merge conflicts with the base branch.");
+            } else if (hasLabel) {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                name: label,
+              });
+            }
