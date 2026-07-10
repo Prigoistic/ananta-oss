@@ -1,0 +1,40 @@
+name: Claude PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Claude code review
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          direct_prompt: |
+            Review this pull request's diff against the base branch.
+
+            Check for:
+            - Correctness bugs and logic errors
+            - Claims in README/docs that the changed code does not actually support
+            - Whether the change is likely to merge cleanly (no leftover conflict
+              markers, no accidental reintroduction of content a previous commit
+              deliberately removed)
+
+            Submit a GitHub PR review:
+            - APPROVE if you find no blocking issues.
+            - REQUEST_CHANGES if you find a real bug or a factual inaccuracy,
+              with specific inline comments on the offending lines.
+
+            Do not approve solely because the diff is small or looks tidy —
+            verify the actual behavior against the code.
